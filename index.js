@@ -3,22 +3,30 @@
 
 const { createServer } = require("http");
 const { Server } = require("socket.io");
-const { uuid } = require("uuidv4");
+const { v4: uuidv4 } = require("uuid");
 const { log } = require("console");
+const { setAUTH, updateAUTH } = require("./functions");
 
-const MAX_PARTICIPANTS = 2;
+const AUTH = {
+	1: {
+		id: 1,
+		uuid: uuidv4().slice(24),
+		socketId: null,
+		name: null,
+		ready: false,
+	},
+	2: {
+		id: 2,
+		uuid: uuidv4().slice(24),
+		name: null,
+		socketId: null,
+		ready: false,
+	},
+};
 const MAX_ROUNDS = 3;
-
 let loop;
-const mapSockets = new Map();
-const mapPorts = new Map();
-let player0;
-let player1;
-let isPlayer0Ready = false;
-let isPlayer1Ready = false;
 let mode;
-let socketIdAdmin;
-let socketIdProjector;
+let hasStarted = false;
 
 const httpServer = createServer();
 const io = new Server(httpServer, {
@@ -32,30 +40,58 @@ const io = new Server(httpServer, {
 // ###########################################################
 
 io.on("connection", (socket) => {
-	socket.on("c:initClient", (port) => {
-		if (mapSockets.size == MAX_PARTICIPANTS) return;
+	socket.on("c:initClient", (id) => {
+		switch (id) {
+			case undefined: {
+				let i = setAUTH(AUTH, socket.id);
+				io.to(socket.id).emit("s:initClient", {
+					id: AUTH[i].id,
+					uuid: AUTH[i].uuid,
+				});
+				break;
+			}
+			default: {
+				AUTH[id].socketId = socket.id;
+			}
+		}
+	});
 
-		mapSockets.set(socket.id, port);
-		mapPorts.set(port, socket.id);
+	socket.on("c:setPlayerNames", ({ id, name }) => {
+		AUTH[id].name = name;
 
-		let i = 1;
-		mapSockets.forEach((_, key) => {
-			io.to(key).emit("s:setPlayerNumber", i);
-			i++;
+		io.emit("s:setPlayerNames", {
+			playerName0: AUTH[1].name || "",
+			playerName1: AUTH[2].name || "",
 		});
 	});
 
-	socket.on("disconnect", () => {
-		let port = mapSockets.get(socket.id);
-		if (mapSockets.has(socket.id)) mapSockets.delete(socket.id);
-		if (mapPorts.has(port)) mapPorts.delete(port);
+	socket.on("c:setPlayerReadiness", (id) => {
+		AUTH[id].ready = true;
+
+		if (AUTH[1].ready && AUTH[2].ready) {
+			hasStarted = true;
+			io.emit("s:start");
+		}
+	});
+
+	socket.on("a:setMode", (data) => {
+		mode = data;
+		io.emit("s:setMode", data);
+	});
+
+	socket.on("disconnect", (reason) => {
+		updateAUTH(AUTH, socket.id, reason);
+		io.emit("s:setPlayerNames", {
+			playerName0: AUTH[1].name || "",
+			playerName1: AUTH[2].name || "",
+		});
 	});
 });
 
 // ###########################################################
 
 loop = setInterval(() => {
-	log("mapSockets:", mapSockets);
+	log("AUTH", AUTH);
 }, 1000);
 
 httpServer.listen(3000);
