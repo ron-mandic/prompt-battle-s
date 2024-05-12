@@ -5,12 +5,14 @@ const { createServer } = require("http");
 const { Server } = require("socket.io");
 const { log } = require("console");
 const { setAUTH, updateAUTH, createRound, getPrompts } = require("./functions");
-const { AUTH, MAX_ROUNDS, CHALLENGES } = require("./constants");
+const { v4: uuidv4 } = require("uuid");
+const { AUTH, CHALLENGES } = require("./constants");
 
 let loop;
 let mode;
 let hasStarted = false;
-let currentRound = 0; // absolute number of rounds (till 6)
+// absolute number of total matches (till 7), i.e. an encounter consisting of MAX_ROUNDS
+let currentBattle = 1;
 
 let socketIdAdmin;
 let socketIdProjector;
@@ -22,6 +24,31 @@ let player0Image;
 let player1Image;
 
 let promptBattle = {};
+
+const renew = () => {
+	mode = undefined;
+	hasStarted = false;
+
+	socketIdAdmin = undefined;
+	socketIdProjector = undefined;
+	player0HasPrompted = false;
+	player1HasPrompted = false;
+	player0HasScribbled = false;
+	player1HasScribbled = false;
+	player0Image = undefined;
+	player1Image = undefined;
+	// promptBattle has already been created
+
+	// AUTH[1].uuid = uuidv4().slice(24);
+	AUTH[1].socketId = null;
+	AUTH[1].name = null;
+	AUTH[1].ready = false;
+
+	// AUTH[1].uuid = uuidv4().slice(24);
+	AUTH[2].socketId = null;
+	AUTH[2].name = null;
+	AUTH[2].ready = false;
+};
 
 const httpServer = createServer();
 const io = new Server(httpServer, {
@@ -86,7 +113,7 @@ io.on("connection", (socket) => {
 
 			promptBattle = createRound(
 				AUTH,
-				getPrompts(CHALLENGES, currentRound)
+				getPrompts(CHALLENGES, currentBattle - 1)
 			);
 		}
 	});
@@ -136,19 +163,50 @@ io.on("connection", (socket) => {
 	// ------------------------------------------------------- Admin
 	socket.on("a:requestEvent", (ev) => {
 		switch (ev) {
-			case "s:sendBattleData":
+			case "s:sendBattleData": {
 				io.emit("s:sendBattleData", {
 					player0Score: promptBattle.player0Score,
 					player1Score: promptBattle.player1Score,
 					guuid: promptBattle.guuid,
 				});
 				break;
-			case "s:sendImage/results":
+			}
+			case "s:sendImage/results": {
 				io.emit("s:sendImage/results", {
 					player0Image,
 					player1Image,
 				});
 				break;
+			}
+			case "s:prepareNextRound": {
+				let isNextMatch =
+					promptBattle.currentRound > promptBattle.maxRounds;
+
+				let message;
+
+				/**
+				 * This will be sent to both the client and the admin. But here,
+				 * only the admin has to be informed about the next round.
+				 *
+				 * -> localhost:1405/prompt?...
+				 * -> localhost:5173/
+				 */
+				if (isNextMatch) {
+					currentBattle++;
+					promptBattle = createRound(
+						AUTH,
+						getPrompts(CHALLENGES, currentBattle - 1)
+					);
+
+					message = "round=new";
+				} else {
+					message = "round=current";
+				}
+
+				io.to(socketIdAdmin).emit("s:prepareNextRound", message);
+
+				break;
+			}
 		}
 	});
 
@@ -158,17 +216,40 @@ io.on("connection", (socket) => {
 			promptBattle.player0Score = score0;
 			promptBattle.player1Score = score1;
 
-			// if (currentRound < MAX_ROUNDS) {
-			// 	currentRound++;
-			// 	promptBattle = createRound(
-			// 		AUTH,
-			// 		getPrompts(CHALLENGES, currentRound)
-			// 	);
-			// } else {
-			// 	io.emit("s:end");
-			// }
+			promptBattle.currentRound++;
+			const MAX_ROUNDS = 1; // promptBattle.maxRounds
+
+			// z.B. 4
+			if (promptBattle.currentRound > MAX_ROUNDS) {
+				let idWinner =
+					promptBattle.player0Score > promptBattle.player1Score
+						? "1"
+						: "2";
+
+				io.emit("s:sendGameStats", idWinner);
+				return;
+			}
+
+			// z.B. 1, 2, 3
+			if (promptBattle.currentRound <= MAX_ROUNDS) {
+				// promptBattle = createRound(
+				// 	AUTH,
+				// 	getPrompts(CHALLENGES, currentRound)
+				// );
+
+				io.emit("s:sendGameStats");
+				return;
+			}
 		}
 	);
+
+	socket.on("a:prepareNextRound", (message) => {
+		io.emit("s:prepareClient", message);
+
+		if (message == "round=new") {
+			renew();
+		}
+	});
 
 	// -------------------------------------------------------
 
@@ -187,7 +268,7 @@ io.on("connection", (socket) => {
 
 loop = setInterval(() => {
 	log("AUTH", AUTH);
-	// log("promptBattle", promptBattle);
+	log("promptBattle", promptBattle);
 }, 1000);
 
 httpServer.listen(3000);
