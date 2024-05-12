@@ -3,30 +3,16 @@
 
 const { createServer } = require("http");
 const { Server } = require("socket.io");
-const { v4: uuidv4 } = require("uuid");
 const { log } = require("console");
-const { setAUTH, updateAUTH } = require("./functions");
+const { setAUTH, updateAUTH, createRound, getPrompts } = require("./functions");
+const { AUTH, MAX_ROUNDS, CHALLENGES } = require("./constants");
 
-const AUTH = {
-	1: {
-		id: 1,
-		uuid: uuidv4().slice(24),
-		socketId: null,
-		name: null,
-		ready: false,
-	},
-	2: {
-		id: 2,
-		uuid: uuidv4().slice(24),
-		name: null,
-		socketId: null,
-		ready: false,
-	},
-};
-const MAX_ROUNDS = 3;
 let loop;
 let mode;
 let hasStarted = false;
+let currentRound = 0; // absolute number of rounds (till 6)
+
+let promptBattle = {};
 
 const httpServer = createServer();
 const io = new Server(httpServer, {
@@ -50,8 +36,23 @@ io.on("connection", (socket) => {
 				});
 				break;
 			}
+			case "ADMIN": {
+				io.to(socket.id).emit("s:setPlayerNames", {
+					playerName0: AUTH[1].name || "",
+					playerName1: AUTH[2].name || "",
+				});
+				break;
+			}
+			case "PROJECTOR": {
+				io.to(socket.id).emit("s:setPlayerNames", {
+					playerName0: AUTH[1].name || "",
+					playerName1: AUTH[2].name || "",
+				});
+				break;
+			}
 			default: {
 				AUTH[id].socketId = socket.id;
+				break;
 			}
 		}
 	});
@@ -71,16 +72,46 @@ io.on("connection", (socket) => {
 		if (AUTH[1].ready && AUTH[2].ready) {
 			hasStarted = true;
 			io.emit("s:start");
+
+			promptBattle = createRound(
+				AUTH,
+				getPrompts(CHALLENGES, currentRound)
+			);
 		}
 	});
 
-	socket.on("a:setMode", (data) => {
+	socket.on("a:setMode", ({ mode: data }) => {
 		mode = data;
+
 		io.emit("s:setMode", data);
 	});
 
+	socket.on("c:requestEvent", (ev) => {
+		switch (ev) {
+			case "s:sendPromptBattle":
+				io.to(socket.id).emit("s:sendPromptBattle", promptBattle);
+				break;
+		}
+	});
+
+	socket.on("a:requestEvent", (ev) => {
+		switch (ev) {
+			case "s:sendBattleData":
+				io.emit("s:sendBattleData", {
+					player0Score: promptBattle.player0Score,
+					player1Score: promptBattle.player1Score,
+					guuid: promptBattle.guuid,
+				});
+				break;
+		}
+	});
+
+	// -------------------------------------------------------
+
 	socket.on("disconnect", (reason) => {
 		updateAUTH(AUTH, socket.id, reason);
+		if (reason !== "client namespace disconnect") promptBattle = {};
+
 		io.emit("s:setPlayerNames", {
 			playerName0: AUTH[1].name || "",
 			playerName1: AUTH[2].name || "",
@@ -92,6 +123,7 @@ io.on("connection", (socket) => {
 
 loop = setInterval(() => {
 	log("AUTH", AUTH);
+	// log("promptBattle", promptBattle);
 }, 1000);
 
 httpServer.listen(3000);

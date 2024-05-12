@@ -1,3 +1,6 @@
+const { v4: uuidv4 } = require("uuid");
+const { MAX_ROUNDS } = require("./constants");
+
 function setAUTH(auth, socketId) {
 	const player0 = auth[1];
 	const player1 = auth[2];
@@ -31,10 +34,33 @@ function updateAUTH(auth, socketId, reason) {
 		if (!hasRouted) player1.name = null;
 		if (!hasRouted) player1.ready = false;
 	}
+
 	return;
+}
+
+const getPrompts = (challenges, currentRound, maxRounds = MAX_ROUNDS) => {
+	return challenges.slice(
+		currentRound * maxRounds,
+		currentRound * maxRounds + maxRounds
+	);
+};
+
+function createRound(auth, prompts) {
+	return {
+		guuid: "g-" + uuidv4().slice(0, 8),
+		prompts,
+		player0: auth["1"].name,
+		player0Score: 0,
+		player1: auth["2"].name,
+		player1Score: 0,
+		currentRound: 1,
+		maxRounds: MAX_ROUNDS,
+	};
 }
 
 module.exports = {
 	setAUTH,
 	updateAUTH,
+	createRound,
+	getPrompts,
 };
