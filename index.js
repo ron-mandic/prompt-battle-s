@@ -127,9 +127,14 @@ io.on("connection", (socket) => {
 	// ------------------------------------------------------- Client
 	socket.on("c:requestEvent", (ev) => {
 		switch (ev) {
-			case "s:sendPromptBattle":
+			case "s:sendPromptBattle": {
 				io.to(socket.id).emit("s:sendPromptBattle", promptBattle);
 				break;
+			}
+			case "s:getName": {
+				io.to(socket.id).emit("s:getName", AUTH);
+				break;
+			}
 		}
 	});
 
@@ -217,7 +222,7 @@ io.on("connection", (socket) => {
 			promptBattle.player1Score = score1;
 
 			promptBattle.currentRound++;
-			const MAX_ROUNDS = 1; // promptBattle.maxRounds
+			const MAX_ROUNDS = promptBattle.maxRounds; // promptBattle.maxRounds
 
 			// z.B. 4
 			if (promptBattle.currentRound > MAX_ROUNDS) {
@@ -268,7 +273,7 @@ io.on("connection", (socket) => {
 
 loop = setInterval(() => {
 	log("AUTH", AUTH);
-	log("promptBattle", promptBattle);
+	log("promptBattle", promptBattle.prompts);
 }, 1000);
 
 httpServer.listen(3000);

@@ -54,7 +54,7 @@ function createRound(auth, prompts) {
 		player1: auth["2"].name,
 		player1Score: 0,
 		currentRound: 1,
-		maxRounds: 1, // MAX_ROUNDS
+		maxRounds: MAX_ROUNDS,
 	};
 }
 
