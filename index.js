@@ -163,6 +163,13 @@ io.on("connection", (socket) => {
 	socket.on("c:sendImage/results", ({ id, image }) => {
 		if (id === "1") player0Image = image;
 		if (id === "2") player1Image = image;
+
+		if (socketIdProjector) {
+			io.to(socketIdProjector).emit("s:sendImage/results", {
+				player0Image,
+				player1Image,
+			});
+		}
 	});
 
 	// ------------------------------------------------------- Admin
@@ -254,6 +261,32 @@ io.on("connection", (socket) => {
 		if (message == "round=new") {
 			renew();
 		}
+	});
+
+	// ------------------------------------------------------- PROJECTOR
+	socket.on("p:requestEvent", (ev) => {
+		switch (ev) {
+			case "s:sendPromptBattle": {
+				io.to(socket.id).emit("s:sendPromptBattle", promptBattle);
+				break;
+			}
+			case "s:sendMode": {
+				io.to(socket.id).emit("s:sendMode", mode);
+				break;
+			}
+		}
+	});
+
+	socket.on("a:setProjector/projector/", () => {
+		io.to(socketIdProjector).emit("s:setProjector/projector/");
+	});
+
+	socket.on("c:sendClientPrompt", (args) => {
+		io.to(socketIdProjector).emit("s:sendClientPrompt", args);
+	});
+
+	socket.on("a:sendImageChoice", (id) => {
+		io.to(socketIdProjector).emit("s:sendImageChoice", id);
 	});
 
 	// -------------------------------------------------------
