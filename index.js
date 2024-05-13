@@ -55,7 +55,11 @@ const io = new Server(httpServer, {
 	allowEIO3: true,
 	transports: ["polling", "websocket"], // Erlaubte Transports
 	cors: {
-		origin: ["http://localhost:5173", "http://localhost:1405"],
+		origin: [
+			"http://localhost:5173",
+			"http://localhost:1405",
+			"http://localhost:1505",
+		],
 	},
 });
 
@@ -306,6 +310,11 @@ io.on("connection", (socket) => {
 
 	socket.on("a:sendImageChoice", (id) => {
 		io.to(socketIdProjector).emit("s:sendImageChoice", id);
+	});
+
+	// Live Canvas
+	socket.on("c:sendCanvasData", (obj) => {
+		io.to(socketIdProjector).emit("s:sendCanvasData", obj);
 	});
 
 	// -------------------------------------------------------
