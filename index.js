@@ -261,6 +261,25 @@ io.on("connection", (socket) => {
 		if (message == "round=new") {
 			renew();
 		}
+
+		if (message == "round=current") {
+			// mode = undefined; mode isb eing carried over for now
+			hasStarted = false;
+
+			socketIdAdmin = undefined;
+			socketIdProjector = undefined;
+			player0HasPrompted = false;
+			player1HasPrompted = false;
+			player0HasScribbled = false;
+			player1HasScribbled = false;
+			player0Image = undefined;
+			player1Image = undefined;
+			// promptBattle has already been created
+		}
+	});
+
+	socket.on("a:prepareNextRound", (message) => {
+		io.emit("s:prepareProjector", message);
 	});
 
 	// ------------------------------------------------------- PROJECTOR
@@ -305,8 +324,8 @@ io.on("connection", (socket) => {
 // ###########################################################
 
 loop = setInterval(() => {
-	log("AUTH", AUTH);
-	log("promptBattle", promptBattle.prompts);
+	// log("AUTH", AUTH);
+	// log("promptBattle", promptBattle.prompts);
 }, 1000);
 
 httpServer.listen(3000);
