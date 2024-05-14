@@ -3,10 +3,8 @@
 
 const { createServer } = require("http");
 const { Server } = require("socket.io");
-const { log } = require("console");
 const { setAUTH, updateAUTH, createRound, getPrompts } = require("./functions");
-const { v4: uuidv4 } = require("uuid");
-const { AUTH, CHALLENGES } = require("./constants");
+const { AUTH, CHALLENGES, SERVER_PORT, URL_ORIGINS } = require("./constants");
 
 let loop;
 let mode;
@@ -55,11 +53,7 @@ const io = new Server(httpServer, {
 	allowEIO3: true,
 	transports: ["polling", "websocket"], // Erlaubte Transports
 	cors: {
-		origin: [
-			"http://localhost:5173",
-			"http://localhost:1405",
-			"http://localhost:1505",
-		],
+		origin: "*", // URL_ORIGINS
 	},
 });
 
@@ -111,14 +105,17 @@ io.on("connection", (socket) => {
 	socket.on("c:setPlayerReadiness", (id) => {
 		AUTH[id].ready = true;
 
+		// Sending data to the admin and the projector
+		io.emit("s:setPlayerReadiness", id);
+
 		if (AUTH[1].ready && AUTH[2].ready) {
 			hasStarted = true;
-			io.emit("s:start");
-
 			promptBattle = createRound(
 				AUTH,
 				getPrompts(CHALLENGES, currentBattle - 1)
 			);
+
+			io.emit("s:start");
 		}
 	});
 
@@ -165,8 +162,8 @@ io.on("connection", (socket) => {
 	});
 
 	socket.on("c:sendImage/results", ({ id, image }) => {
-		if (id === "1") player0Image = image;
-		if (id === "2") player1Image = image;
+		if (id == "1") player0Image = image;
+		if (id == "2") player1Image = image;
 
 		if (socketIdProjector) {
 			io.to(socketIdProjector).emit("s:sendImage/results", {
@@ -317,6 +314,9 @@ io.on("connection", (socket) => {
 		io.to(socketIdProjector).emit("s:sendCanvasData", obj);
 	});
 
+	// Readiness for admin panel
+	socket.on("p:sendAdminReadiness", () => io.emit("s:sendAdminReadiness"));
+
 	// -------------------------------------------------------
 
 	socket.on("disconnect", (reason) => {
@@ -337,4 +337,4 @@ loop = setInterval(() => {
 	// log("promptBattle", promptBattle.prompts);
 }, 1000);
 
-httpServer.listen(3000);
+httpServer.listen(SERVER_PORT);

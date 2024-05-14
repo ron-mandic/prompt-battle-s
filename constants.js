@@ -1,5 +1,12 @@
 const { v4: uuidv4 } = require("uuid");
 
+const URL_ADMIN = "http://localhost:5173"; // "http://192.168.178.30:5173"
+const URL_PLAYER1 = "http://localhost:1405"; // "http://192.168.178.10:1405"
+const URL_PLAYER2 = "http://localhost:1405"; // "http://192.168.178.20:1405"
+const URL_ORIGINS = [URL_ADMIN, URL_PLAYER1, URL_PLAYER2];
+
+const SERVER_PORT = 3000;
+
 const AUTH = {
 	1: {
 		id: 1,
@@ -94,6 +101,11 @@ const CHALLENGES = [
 ];
 
 module.exports = {
+	SERVER_PORT,
+	URL_ADMIN,
+	URL_PLAYER1,
+	URL_PLAYER2,
+	URL_ORIGINS,
 	AUTH,
 	MAX_ROUNDS,
 	CHALLENGES,
