@@ -26,35 +26,28 @@ const AUTH = {
 const MAX_ROUNDS = 3;
 
 const CHALLENGES = [
-	// V, 0
-	"Design a cozy reading nook for a small apartment.",
-	"Create a character design for a friendly alien creature.",
-	"Invent a high-tech gadget for organizing daily tasks and reminders.",
-	// V, 1
-	"Design a fantasy map of a magical kingdom with diverse landscapes.",
-	"Illustrate a scene from a classic fairy tale with a modern twist.",
-	"Create a concept for a futuristic cityscape with advanced technology.",
-	// V, 2
-	"Design a whimsical underwater world inhabited by colorful sea creatures.",
-	"Illustrate a peaceful countryside scene with rolling hills and grazing animals.",
-	"Invent a flying vehicle for personal transportation in a steampunk universe.",
-	// V, 3
-	"Design a cozy coffee shop interior with warm lighting and comfortable seating.",
-	"Create a character design for a young superhero with unique powers.",
-	"Illustrate a bustling marketplace in a bustling medieval town.",
-	// H, 0
-	"Invent a time-traveling device disguised as an ordinary object.",
-	"Design a futuristic space station orbiting a distant planet.",
-	"Illustrate a scene from a dystopian future where nature has reclaimed the city.",
-	// H, 1
-	"Create a concept for a floating island city in the clouds.",
-	"Design a magical forest inhabited by mythical creatures like unicorns and fairies.",
-	"Illustrate a scene from a post-apocalyptic world overrun by robots.",
-	// F, 0
-	"Invent a device for communicating with animals in the wilderness.",
-	"Design a cozy cabin interior nestled in the mountains.",
-	"Create a character design for a mischievous forest sprite.",
-
+	"Place yourself in a hollywood movie",
+	"Create a hybrid of your favorite animal and favorite food",
+	"Create a detailed portrait of your opponent!",
+	'Create the wildest "motto Party"',
+	"Create your spirit animal",
+	"Design a chair",
+	"Illustrate your last / or craziest dream",
+	"How do you imagine AI?",
+	"You are a biologist and discover a new species, describe it!",
+	"Place yourself in an underwater motto party",
+	"Create a family picture of the AI+D lab team",
+	"Create as many copyright infringements as possible!",
+	"HfG in a nutshell",
+	"Create a logo for your next startup. Follow signature HfG style",
+	"Design a new product for the smallest target group (including you)!",
+	"Design an eco-friendly vacation alternative",
+	"I bet, DALL-E has no idea what this is!",
+	"What does Feuerzangenbowle actually mean?",
+	"Recreate the letter 'A' shape without saying 'A'!",
+	"Invent a new dish",
+	"Create a Movie Poster for a Block Buster",
+	// ...
 	"Illustrate a scene from a science fiction story set on a distant planet.",
 	"Invent a device for harvesting energy from renewable sources.",
 	"Design a futuristic vehicle for exploring alien landscapes.",
