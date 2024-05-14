@@ -88,6 +88,10 @@ io.on("connection", (socket) => {
 			}
 			default: {
 				AUTH[id].socketId = socket.id;
+				io.to(socket.id).emit("s:initClient", {
+					id: AUTH[id].id,
+					uuid: AUTH[id].uuid,
+				});
 				break;
 			}
 		}
